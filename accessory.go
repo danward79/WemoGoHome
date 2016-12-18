@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -77,29 +76,59 @@ func getDevice(thing interface{}) *wemo.DeviceInfo {
 	return nil
 }
 
+func subscriptionExists(d *wemo.DeviceInfo, subscriptions map[string]*wemo.SubscriptionInfo) bool {
+	for _, v := range subscriptions {
+		if v.DeviceInfo.UDN == d.UDN {
+			return true
+		}
+	}
+	return false
+}
+
+func updateAccessory(subscription *wemo.SubscriptionInfo) {
+
+	for _, v := range wemoThings {
+		if getDevice(v).UDN == subscription.DeviceInfo.UDN {
+
+			switch v.(type) {
+			case wemoSwitch:
+				updateSwitch(subscription, v.(wemoSwitch).accessory)
+			case wemoBulb:
+				if v.(wemoBulb).endDevice.DeviceID == subscription.Deviceevent.StateEvent.DeviceID {
+					updateBulb(subscription, v.(wemoBulb).accessory)
+				}
+			}
+
+		}
+	}
+}
+
 func subscribeService(listenerAddress string, subsCh chan wemo.SubscriptionEvent) {
 
 	subscriptions := make(map[string]*wemo.SubscriptionInfo)
 
 	for _, thing := range wemoThings {
-		fmt.Println("subService", thing)
-		subscribe(getDevice(thing), listenerAddress, subscriptions)
+		d := getDevice(thing)
+		if !subscriptionExists(d, subscriptions) {
+			subscribe(d, listenerAddress, subscriptions)
+		}
 	}
 
 	go wemo.Listener(listenerAddress, subsCh)
 
 	for m := range subsCh {
 		if _, ok := subscriptions[m.Sid]; ok {
-			subscriptions[m.Sid].State = m.State
-			log.Println("---Subscriber Event: ", subscriptions[m.Sid])
+			subscriptions[m.Sid].Deviceevent = m.Deviceevent
+			//log.Println("---Subscriber Event: ", subscriptions[m.Sid])
+			updateAccessory(subscriptions[m.Sid])
 		} else {
-			log.Println("Does'nt exist, ", m.Sid)
+			log.Println("SID does'nt exist:", m.Sid)
+			//go subscribe(&subscriptions[m.Sid].DeviceInfo, listenerAddress, subscriptions) //TODO Resubscribe
 		}
 	}
 }
 
 func subscribe(d *wemo.DeviceInfo, listenerAddress string, subscriptions map[string]*wemo.SubscriptionInfo) {
-
 	_, err := d.Device.ManageSubscription(listenerAddress, 300, subscriptions)
 	if err != 200 {
 		log.Println("Initial Error Subscribing: ", err)

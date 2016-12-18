@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/brutella/hc"
 	"github.com/brutella/hc/accessory"
 	wemo "github.com/danward79/go.wemo"
@@ -42,4 +44,9 @@ func createSwitch(d *wemo.DeviceInfo, pin string) (wemoSwitch, error) {
 	}()
 
 	return wemoSwitch{device: d, accessory: acc, transport: t}, nil
+}
+
+func updateSwitch(subscription *wemo.SubscriptionInfo, acc *accessory.Switch) {
+	b, _ := strconv.ParseBool(subscription.Deviceevent.BinaryState)
+	acc.Switch.On.SetValue(b)
 }
