@@ -119,7 +119,6 @@ func subscribeService(listenerAddress string, subsCh chan wemo.SubscriptionEvent
 	for m := range subsCh {
 		if _, ok := subscriptions[m.Sid]; ok {
 			subscriptions[m.Sid].Deviceevent = m.Deviceevent
-			//log.Println("---Subscriber Event: ", subscriptions[m.Sid])
 			updateAccessory(subscriptions[m.Sid])
 		} else {
 			log.Println("SID does'nt exist:", m.Sid)

@@ -33,8 +33,8 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 			log.Println("Dim Value out of bounds:", value)
 			return
 		}
-
-		d.Device.Bulb(i.Model, "dim", fmt.Sprintf("%d", value/100*255), false)
+		level := float32(value) / 100 * 255
+		d.Device.Bulb(i.Model, "dim", fmt.Sprintf("%d", int(level)), false)
 	})
 
 	acc.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
