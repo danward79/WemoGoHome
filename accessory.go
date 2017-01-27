@@ -33,6 +33,8 @@ func discover(i, pin string) {
 
 func createAccessory(d *wemo.DeviceInfo, pin string) {
 	var err error
+
+	//BUG: Occassionaly there is a crash at the switch below due to a nil pointer, below is to catch error.
 	log.Println("d.DeviceType", d.DeviceType)
 
 	switch d.DeviceType {
@@ -132,7 +134,7 @@ func updateOnEvent(subsCh chan wemo.SubscriptionEvent) {
 	for m := range subsCh {
 		if _, ok := subscriptions[m.Sid]; ok {
 			subscriptions[m.Sid].Deviceevent = m.Deviceevent
-			log.Println("Event:", m.Deviceevent)
+			//log.Println("Event:", m.Deviceevent)
 			updateAccessory(subscriptions[m.Sid])
 		}
 	}
