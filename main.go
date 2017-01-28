@@ -31,7 +31,7 @@ func main() {
 	go func() {
 		for _ = range timer.C {
 			timer.Reset(time.Second * time.Duration(*rediscoveryPeriod))
-			log.Println("Discover and Sub")
+			log.Println("Discover Wemo devices and Subscribe")
 
 			discover(*netInterface, *pin)
 			subscribeService(*listenerAddress, cs)
