@@ -15,16 +15,28 @@ func main() {
 	pin := flag.String("pin", "87654321", "Pin number for wemo accessories, default 87654321")
 	netInterface := flag.String("i", "en0", "Network Interface, default en0")
 	listenerAddress := flag.String("l", getIPAddress()+":6767", "Listener address")
+	rediscoveryPeriod := flag.Int("d", 1800, "Rediscovery period, used to look for new devices. Defaults: 30mins")
 	flag.Parse()
 
 	if *listenerAddress == "" {
 		log.Fatal("No IP address specified or found")
 	}
 
-	discover(*netInterface, *pin)
-
 	cs := make(chan wemo.SubscriptionEvent)
-	subscribeService(*listenerAddress, cs)
+	go wemo.Listener(*listenerAddress, cs)
+	go updateOnEvent(cs)
+
+	//Automatic rediscovery and subscription to new devices as they appear
+	timer := time.NewTimer(time.Second * time.Duration(1))
+	go func() {
+		for _ = range timer.C {
+			timer.Reset(time.Second * time.Duration(*rediscoveryPeriod))
+			log.Println("Discover and Sub")
+
+			discover(*netInterface, *pin)
+			subscribeService(*listenerAddress, cs)
+		}
+	}()
 
 	waitToExit()
 }

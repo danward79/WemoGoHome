@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/brutella/hc"
@@ -47,6 +48,7 @@ func createSwitch(d *wemo.DeviceInfo, pin string) (wemoSwitch, error) {
 }
 
 func updateSwitch(subscription *wemo.SubscriptionInfo, acc *accessory.Switch) {
-	b, _ := strconv.ParseBool(subscription.Deviceevent.BinaryState)
+	b, err := strconv.ParseBool(subscription.Deviceevent.BinaryState)
+	log.Println("Binary State", b, err) //TODO: Missing device can go undetected
 	acc.Switch.On.SetValue(b)
 }

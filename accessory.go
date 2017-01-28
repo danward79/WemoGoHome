@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	wemoThings = make(map[string]interface{})
-	cs         = make(chan wemo.SubscriptionEvent)
+	wemoThings    = make(map[string]interface{})
+	cs            = make(chan wemo.SubscriptionEvent)
+	subscriptions = make(map[string]*wemo.SubscriptionInfo)
 )
 
 func discover(i, pin string) {
@@ -24,8 +25,7 @@ func discover(i, pin string) {
 	devices, _ := api.DiscoverAll(5 * time.Second)
 	for _, device := range devices {
 		deviceInfo, _ := device.FetchDeviceInfo(ctx)
-		//log.Println(deviceInfo) //TODO: Sometimes all devices are not found. Add periodic rescan?
-		go createAccessory(deviceInfo, pin)
+		createAccessory(deviceInfo, pin)
 	}
 
 	terminateAccesories()
@@ -34,19 +34,35 @@ func discover(i, pin string) {
 func createAccessory(d *wemo.DeviceInfo, pin string) {
 	var err error
 
+	//BUG: Occassionaly there is a crash at the switch below due to a nil pointer, below is to catch error.
+	//NOTE: Occasionally it is possible that a nil device is provided if a device is lost during discover. This prevents a panic.
+	if d == nil {
+		log.Println("NIL Device return")
+		return
+	}
+	log.Println("d.DeviceType", d.DeviceType)
+
 	switch d.DeviceType {
 	case wemo.Controllee:
-		wemoThings[d.UDN], err = createSwitch(d, pin)
-		if err != nil {
-			log.Println(err)
-		}
-	case wemo.Bridge:
-		for k, v := range d.EndDevices.EndDeviceInfo {
-			wemoThings[v.DeviceID], err = createBulb(d, k, pin)
+
+		if _, exists := wemoThings[d.UDN]; !exists {
+			wemoThings[d.UDN], err = createSwitch(d, pin)
 			if err != nil {
 				log.Println(err)
 			}
 		}
+
+	case wemo.Bridge:
+
+		for k, v := range d.EndDevices.EndDeviceInfo {
+			if _, exists := wemoThings[v.DeviceID]; !exists {
+				wemoThings[v.DeviceID], err = createBulb(d, k, pin)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}
+
 	}
 }
 
@@ -104,25 +120,10 @@ func updateAccessory(subscription *wemo.SubscriptionInfo) {
 }
 
 func subscribeService(listenerAddress string, subsCh chan wemo.SubscriptionEvent) {
-
-	subscriptions := make(map[string]*wemo.SubscriptionInfo)
-
 	for _, thing := range wemoThings {
 		d := getDevice(thing)
 		if !subscriptionExists(d, subscriptions) {
 			subscribe(d, listenerAddress, subscriptions)
-		}
-	}
-
-	go wemo.Listener(listenerAddress, subsCh)
-
-	for m := range subsCh {
-		if _, ok := subscriptions[m.Sid]; ok {
-			subscriptions[m.Sid].Deviceevent = m.Deviceevent
-			updateAccessory(subscriptions[m.Sid])
-		} else {
-			log.Println("SID does'nt exist:", m.Sid)
-			//go subscribe(&subscriptions[m.Sid].DeviceInfo, listenerAddress, subscriptions) //TODO Resubscribe
 		}
 	}
 }
@@ -131,5 +132,15 @@ func subscribe(d *wemo.DeviceInfo, listenerAddress string, subscriptions map[str
 	_, err := d.Device.ManageSubscription(listenerAddress, 300, subscriptions)
 	if err != 200 {
 		log.Println("Initial Error Subscribing: ", err)
+	}
+}
+
+func updateOnEvent(subsCh chan wemo.SubscriptionEvent) {
+	for m := range subsCh {
+		if _, ok := subscriptions[m.Sid]; ok {
+			subscriptions[m.Sid].Deviceevent = m.Deviceevent
+			//log.Println("Event:", m.Deviceevent)
+			updateAccessory(subscriptions[m.Sid])
+		}
 	}
 }

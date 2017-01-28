@@ -26,6 +26,7 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 		Model:        d.EndDevices.EndDeviceInfo[index].DeviceID,
 	}
 
+	//TODO: Remove colour characteristic
 	acc := accessory.NewLightbulb(i)
 
 	acc.Lightbulb.Brightness.OnValueRemoteUpdate(func(value int) {
