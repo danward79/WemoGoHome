@@ -35,6 +35,11 @@ func createAccessory(d *wemo.DeviceInfo, pin string) {
 	var err error
 
 	//BUG: Occassionaly there is a crash at the switch below due to a nil pointer, below is to catch error.
+	//NOTE: Occasionally it is possible that a nil device is provided if a device is lost during discover. This prevents a panic.
+	if d == nil {
+		log.Println("NIL Device return")
+		return
+	}
 	log.Println("d.DeviceType", d.DeviceType)
 
 	switch d.DeviceType {
