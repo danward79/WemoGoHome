@@ -24,8 +24,9 @@ func discover(i, pin string) {
 
 	devices, _ := api.DiscoverAll(5 * time.Second)
 	for _, device := range devices {
-		deviceInfo, _ := device.FetchDeviceInfo(ctx)
-		createAccessory(deviceInfo, pin)
+		if deviceInfo, err := device.FetchDeviceInfo(ctx); err == nil {
+			createAccessory(deviceInfo, pin)
+		}
 	}
 
 	terminateAccesories()
@@ -33,14 +34,6 @@ func discover(i, pin string) {
 
 func createAccessory(d *wemo.DeviceInfo, pin string) {
 	var err error
-
-	//BUG: Occassionaly there is a crash at the switch below due to a nil pointer, below is to catch error.
-	//NOTE: Occasionally it is possible that a nil device is provided if a device is lost during discover. This prevents a panic.
-	if d == nil {
-		log.Println("NIL Device return")
-		return
-	}
-	log.Println("d.DeviceType", d.DeviceType)
 
 	switch d.DeviceType {
 	case wemo.Controllee:
