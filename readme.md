@@ -16,6 +16,18 @@ cd $GOPATH/src/github.com/danward79/WemoGoHome/
 go install
 ```
 
+#### Or Build and Copy
+If you want to cross compile for installing manually on a Raspberry pi or some other machine.
+
+*Note* Remove GOARM=7 if you are unsure of the arm device type... e.g. Older Raspberry Pi devices.
+
+```
+go get -u github.com/danward79/WemoGoHome
+cd $GOPATH/src/github.com/danward79/WemoGoHome/
+GOOS=linux GOARCH=arm GOARM=7 go build
+```
+
+
 #### Run
 This will run with default settings, if you go bin is in your $PATH
 
