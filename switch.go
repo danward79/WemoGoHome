@@ -26,12 +26,18 @@ func createSwitch(d *wemo.DeviceInfo, pin string) (wemoSwitch, error) {
 
 	acc := accessory.NewSwitch(i)
 
+	//TODO: Missing device can go undetected
 	acc.Switch.On.OnValueRemoteUpdate(func(on bool) {
-		if on == true {
-			d.Device.On()
-		} else {
-			d.Device.Off()
+		if err := d.Device.SetState(on); err != nil {
+			log.Println("OnValueRemoteUpdate, Error:", err)
 		}
+
+		b := false
+		if d.Device.GetBinaryState() == 1 {
+			b = true
+		}
+		acc.Switch.On.SetValue(b)
+
 	})
 
 	config := hc.Config{Pin: pin}
@@ -49,6 +55,8 @@ func createSwitch(d *wemo.DeviceInfo, pin string) (wemoSwitch, error) {
 
 func updateSwitch(subscription *wemo.SubscriptionInfo, acc *accessory.Switch) {
 	b, err := strconv.ParseBool(subscription.Deviceevent.BinaryState)
-	log.Println("Binary State", b, err) //TODO: Missing device can go undetected
+	if err != nil {
+		log.Println("UpdateSwitch Error", err)
+	}
 	acc.Switch.On.SetValue(b)
 }
