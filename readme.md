@@ -16,6 +16,13 @@ cd $GOPATH/src/github.com/danward79/WemoGoHome/
 go install
 ```
 
+#### Run
+This will run with default settings, if you go bin is in your $PATH
+
+```
+WemoGoHome
+```
+
 #### Or Build and Copy
 If you want to cross compile for installing manually on a Raspberry pi or some other machine.
 
@@ -27,12 +34,10 @@ cd $GOPATH/src/github.com/danward79/WemoGoHome/
 GOOS=linux GOARCH=arm GOARM=7 go build
 ```
 
-
-#### Run
-This will run with default settings, if you go bin is in your $PATH
-
+Copy to the location you wish to use as your working directory and
 ```
-WemoGoHome
+cd ~/pathtoyourworkingdirectory
+./WemoGoHome
 ```
 
 #### Command Options
