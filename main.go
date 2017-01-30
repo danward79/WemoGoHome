@@ -16,7 +16,16 @@ func main() {
 	netInterface := flag.String("i", "en0", "Network Interface, default en0")
 	listenerAddress := flag.String("l", getIPAddress()+":6767", "Listener address")
 	rediscoveryPeriod := flag.Int("d", 1800, "Rediscovery period, used to look for new devices. Defaults: 30mins")
+	timeout := flag.Int("t", 3600, "Wemo device subscription renewal time, 3600 second default")
 	flag.Parse()
+
+	if *rediscoveryPeriod == 0 {
+		*rediscoveryPeriod = 1800
+	}
+
+	if *timeout == 0 {
+		*timeout = 3600
+	}
 
 	if *listenerAddress == "" {
 		log.Fatal("No IP address specified or found")
@@ -34,7 +43,7 @@ func main() {
 			log.Println("Discover Wemo devices and Subscribe")
 
 			discover(*netInterface, *pin)
-			subscribeService(*listenerAddress, cs)
+			subscribeService(*listenerAddress, cs, *timeout)
 		}
 	}()
 

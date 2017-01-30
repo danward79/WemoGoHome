@@ -112,17 +112,17 @@ func updateAccessory(subscription *wemo.SubscriptionInfo) {
 	}
 }
 
-func subscribeService(listenerAddress string, subsCh chan wemo.SubscriptionEvent) {
+func subscribeService(listenerAddress string, subsCh chan wemo.SubscriptionEvent, timeout int) {
 	for _, thing := range wemoThings {
 		d := getDevice(thing)
 		if !subscriptionExists(d, subscriptions) {
-			subscribe(d, listenerAddress, subscriptions)
+			subscribe(d, listenerAddress, subscriptions, timeout)
 		}
 	}
 }
 
-func subscribe(d *wemo.DeviceInfo, listenerAddress string, subscriptions map[string]*wemo.SubscriptionInfo) {
-	_, err := d.Device.ManageSubscription(listenerAddress, 300, subscriptions)
+func subscribe(d *wemo.DeviceInfo, listenerAddress string, subscriptions map[string]*wemo.SubscriptionInfo, timeout int) {
+	_, err := d.Device.ManageSubscription(listenerAddress, timeout, subscriptions)
 	if err != 200 {
 		log.Println("Initial Error Subscribing: ", err)
 	}
