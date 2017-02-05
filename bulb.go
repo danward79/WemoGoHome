@@ -15,7 +15,7 @@ import (
 type wemoBulb struct {
 	device    *wemo.DeviceInfo
 	endDevice *wemo.EndDeviceInfo
-	accessory *accessory.Lightbulb
+	accessory *Lightbulb
 	transport hc.Transport
 }
 
@@ -26,8 +26,7 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 		Model:        d.EndDevices.EndDeviceInfo[index].DeviceID,
 	}
 
-	//TODO: Remove colour characteristic
-	acc := accessory.NewLightbulb(i)
+	acc := NewLightbulb(i)
 
 	acc.Lightbulb.Brightness.OnValueRemoteUpdate(func(value int) {
 		if value < 0 || value > 255 {
@@ -36,6 +35,7 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 		}
 		level := float32(value) / 100 * 255
 		d.Device.Bulb(i.Model, "dim", fmt.Sprintf("%d", int(level)), false)
+		//updateBulbStatus(d, i.Model, acc)
 	})
 
 	acc.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
@@ -44,6 +44,7 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 		} else {
 			d.Device.Bulb(i.Model, "off", "", false)
 		}
+		//updateBulbStatus(d, i.Model, acc)
 	})
 
 	config := hc.Config{Pin: pin}
@@ -59,7 +60,7 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 	return wemoBulb{device: d, endDevice: &d.EndDevices.EndDeviceInfo[index], accessory: acc, transport: t}, nil
 }
 
-func updateBulb(subscription *wemo.SubscriptionInfo, acc *accessory.Lightbulb) {
+func updateBulb(subscription *wemo.SubscriptionInfo, acc *Lightbulb) {
 	switch subscription.Deviceevent.StateEvent.CapabilityID {
 	case "10006":
 		b, _ := strconv.ParseBool(subscription.Deviceevent.StateEvent.Value)
@@ -75,6 +76,30 @@ func updateBulb(subscription *wemo.SubscriptionInfo, acc *accessory.Lightbulb) {
 
 		if i < 1 {
 			acc.Lightbulb.On.SetValue(false)
+		}
+	}
+}
+
+func updateBulbStatus(d *wemo.DeviceInfo, ids string, acc *accessory.Lightbulb) {
+
+	status, _ := d.Device.GetBulbStatus(ids)
+
+	for k, v := range status {
+		if k == ids {
+			s := strings.Split(v, ":")
+			s = strings.Split(s[0], ",")
+
+			b, _ := strconv.ParseBool(s[0])
+			l, _ := strconv.ParseInt(s[1], 10, 32)
+			level := int(float32(l) / 255 * 100)
+			fmt.Println("updateBulbStatus", b, level, "s", s[0], s[1])
+
+			if b {
+				acc.Lightbulb.Brightness.SetValue(level)
+			}
+
+			acc.Lightbulb.On.SetValue(b)
+
 		}
 	}
 }
