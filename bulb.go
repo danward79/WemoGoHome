@@ -35,7 +35,6 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 		}
 		level := float32(value) / 100 * 255
 		d.Device.Bulb(i.Model, "dim", fmt.Sprintf("%d", int(level)), false)
-		//updateBulbStatus(d, i.Model, acc)
 	})
 
 	acc.Lightbulb.On.OnValueRemoteUpdate(func(on bool) {
@@ -44,7 +43,6 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 		} else {
 			d.Device.Bulb(i.Model, "off", "", false)
 		}
-		//updateBulbStatus(d, i.Model, acc)
 	})
 
 	config := hc.Config{Pin: pin}
@@ -56,6 +54,8 @@ func createBulb(d *wemo.DeviceInfo, index int, pin string) (wemoBulb, error) {
 	go func() {
 		t.Start()
 	}()
+
+	updateBulbStatus(d, i.Model, acc)
 
 	return wemoBulb{device: d, endDevice: &d.EndDevices.EndDeviceInfo[index], accessory: acc, transport: t}, nil
 }
@@ -80,7 +80,7 @@ func updateBulb(subscription *wemo.SubscriptionInfo, acc *Lightbulb) {
 	}
 }
 
-func updateBulbStatus(d *wemo.DeviceInfo, ids string, acc *accessory.Lightbulb) {
+func updateBulbStatus(d *wemo.DeviceInfo, ids string, acc *Lightbulb) { //acc *accessory.Lightbulb
 
 	status, _ := d.Device.GetBulbStatus(ids)
 
@@ -92,7 +92,7 @@ func updateBulbStatus(d *wemo.DeviceInfo, ids string, acc *accessory.Lightbulb) 
 			b, _ := strconv.ParseBool(s[0])
 			l, _ := strconv.ParseInt(s[1], 10, 32)
 			level := int(float32(l) / 255 * 100)
-			fmt.Println("updateBulbStatus", b, level, "s", s[0], s[1])
+			//fmt.Println("updateBulbStatus", b, level, "s", s[0], s[1])
 
 			if b {
 				acc.Lightbulb.Brightness.SetValue(level)

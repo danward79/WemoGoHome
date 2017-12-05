@@ -7,7 +7,8 @@ App is being developed but is stable. It is currently deployed on my Raspberry P
 
 #### Stuff to do
 - Sometimes if a device is removed from the network, it is not detected and shown in Homekit for sometime.
-- Wemo bulbs have no colour setting, this characteristic needs removing.
+- ~~Wemo bulbs have no colour setting, this characteristic needs removing.~~
+- ~~Status incorrectly shown upon discoery.~~
 
 #### Install
 ```
